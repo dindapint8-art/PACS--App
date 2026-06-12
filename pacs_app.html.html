@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>PACS+ App · Equipa Clínica</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--v:#2E7D32;--vl:#E8F5E9;--r:#C0392B;--rl:#FDEDEC;--az:#1A3A5C;--azl:#E6F1FB;--a:#E6A817;--al:#FFF8E1;--gray:#F5F5F5;--white:#fff;--border:#E8E8E8;--sub:#888;--safe-bot:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--gray);color:#1A1A1A;font-size:14px}
+
+/* ── SPLASH ─────────────────────────────── */
+#splash{position:fixed;inset:0;background:linear-gradient(160deg,var(--az),var(--v));display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;padding:40px 24px;text-align:center}
+.splash-logo{font-size:52px;color:#fff;letter-spacing:-2px}
+.splash-logo span{color:#C9A84C}
+.splash-sub{font-size:14px;color:rgba(255,255,255,.7);margin-top:6px;margin-bottom:40px}
+.profile-card{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:16px;padding:18px 20px;margin-bottom:12px;cursor:pointer;display:flex;align-items:center;gap:14px;width:100%;max-width:340px;transition:all .15s}
+.profile-card:active{background:rgba(255,255,255,.2);transform:scale(.98)}
+.profile-icon{font-size:28px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.15);border-radius:12px;flex-shrink:0}
+.profile-name{font-size:15px;color:#fff;text-align:left}
+.profile-desc{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px;text-align:left}
+.profile-arrow{color:rgba(255,255,255,.5);font-size:20px;margin-left:auto}
+
+/* ── SCREEN ─────────────────────────────── */
+.screen{position:fixed;inset:0;display:none;flex-direction:column;background:var(--gray)}
+.screen.active{display:flex}
+
+/* ── TOPBAR ─────────────────────────────── */
+.topbar{background:var(--az);padding:12px 16px 10px;padding-top:calc(12px + env(safe-area-inset-top,0px));display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-logo{font-size:18px;color:#fff;letter-spacing:-0.5px}
+.topbar-logo span{color:#C9A84C}
+.topbar-sub{font-size:11px;color:rgba(255,255,255,.6);margin-top:1px}
+.topbar-right{font-size:11px;color:rgba(255,255,255,.5)}
+
+/* ── PAGE DOTS ──────────────────────────── */
+.page-dots{background:var(--white);border-bottom:1px solid var(--border);padding:8px;display:flex;justify-content:center;gap:6px;flex-shrink:0}
+.pdot{height:6px;border-radius:3px;background:#DDD;transition:all .25s;cursor:pointer}
+.pdot.on{background:var(--v);width:24px}
+.pdot:not(.on){width:6px}
+
+/* ── PAGES ──────────────────────────────── */
+#pages-wrap{flex:1;overflow:hidden;position:relative}
+#pages-track{display:flex;height:100%;transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.page{min-width:100%;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(72px + var(--safe-bot))}
+
+/* ── BOTTOM NAV ─────────────────────────── */
+.bottom-nav{position:absolute;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);display:flex;padding-bottom:var(--safe-bot);z-index:10}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px 6px;cursor:pointer;gap:3px;border:none;background:none;color:var(--sub)}
+.nav-btn.on{color:var(--v)}
+.nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav-label{font-size:10px}
+
+/* ── CARDS ──────────────────────────────── */
+.card{background:var(--white);border-radius:14px;padding:16px;margin:0 16px 12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.card-title{font-size:14px;color:var(--az);margin-bottom:12px}
+.section-title{padding:12px 16px 6px;font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.06em}
+
+/* ── KPI GRID ───────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 12px}
+.kpi{background:var(--white);border-radius:12px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.kpi-val{font-size:24px}
+.kpi-label{font-size:11px;color:var(--sub);margin-top:2px}
+.kpi.danger .kpi-val{color:var(--r)}
+.kpi.warn .kpi-val{color:var(--a)}
+.kpi.ok .kpi-val{color:var(--v)}
+
+/* ── ALERTS ─────────────────────────────── */
+.alert{margin:0 16px 10px;padding:10px 14px;border-radius:10px;font-size:12px}
+.alert.r{background:var(--rl);color:var(--r);border-left:3px solid var(--r)}
+.alert.o{background:var(--al);color:#854F0B;border-left:3px solid var(--a)}
+.alert.g{background:var(--vl);color:var(--v);border-left:3px solid var(--v)}
+
+/* ── PATIENT LIST ───────────────────────── */
+.pat-item{background:var(--white);padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.pat-item:last-child{border-bottom:none}
+.sem{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.sem.r{background:var(--r)}
+.sem.o{background:var(--a)}
+.sem.g{background:var(--v)}
+.pat-name{font-size:13px}
+.pat-info{font-size:11px;color:var(--sub);margin-top:1px}
+.pat-badge{margin-left:auto;font-size:10px;padding:2px 8px;border-radius:10px}
+.pat-badge.r{background:var(--rl);color:var(--r)}
+.pat-badge.o{background:var(--al);color:#854F0B}
+.pat-badge.g{background:var(--vl);color:var(--v)}
+
+/* ── FORM ───────────────────────────────── */
+.form-group{margin-bottom:12px}
+.form-label{font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px}
+.form-input{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;background:var(--white);color:#1A1A1A;outline:none;font-family:inherit}
+.form-input:focus{border-color:var(--v)}
+textarea.form-input{resize:none}
+
+/* ── BUTTONS ────────────────────────────── */
+.btn{border:none;border-radius:10px;padding:12px 20px;font-size:13px;cursor:pointer;font-family:inherit;width:100%}
+.btn-green{background:var(--v);color:#fff}
+.btn-blue{background:var(--az);color:#fff}
+.btn-outline{background:var(--white);color:var(--v);border:1.5px solid var(--v)}
+.btn-row{display:flex;gap:10px;padding:0 16px 12px}
+
+/* ── ISBAR ──────────────────────────────── */
+.isbar-dots{display:flex;justify-content:center;gap:8px;padding:10px 0}
+.idot{width:34px;height:34px;border-radius:50%;background:#EEE;color:#AAA;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .2s;cursor:pointer}
+.idot.on{background:var(--v);color:#fff}
+.istep{display:none}
+.istep.show{display:block}
+
+/* ── ACTIVITY ───────────────────────────── */
+.act-item{background:var(--white);padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start}
+.act-dot{width:8px;height:8px;border-radius:50%;margin-top:3px;flex-shrink:0}
+.act-time{font-size:10px;color:var(--sub);margin-top:2px}
+.act-text{font-size:12px;line-height:1.4}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════ SPLASH ══════════════════════════ -->
+<div id="splash">
+  <div class="splash-logo">PACS<span>+</span></div>
+  <div class="splash-sub">Planeamento da Alta Clínica Segura · ULSAALE</div>
+  <div class="profile-card" onclick="go('clinico')">
+    <div class="profile-icon">👩‍⚕️</div>
+    <div><div class="profile-name">Equipa Clínica</div><div class="profile-desc">NURSPACS+ · Médico · Assistente Social · EPA</div></div>
+    <div class="profile-arrow">›</div>
+  </div>
+  <div class="profile-card" onclick="go('familia')">
+    <div class="profile-icon">👨‍👩‍👦</div>
+    <div><div class="profile-name">Doente / Família</div><div class="profile-desc">Informação sobre a alta · Recursos · Contactos</div></div>
+    <div class="profile-arrow">›</div>
+  </div>
+  <div class="profile-card" onclick="go('gestao')">
+    <div class="profile-icon">📊</div>
+    <div><div class="profile-name">Gestão e Liderança</div><div class="profile-desc">Dashboard · KPIs · ROI · Relatórios</div></div>
+    <div class="profile-arrow">›</div>
+  </div>
+</div>
+
+<!-- ══════════════════════ EQUIPA CLÍNICA ══════════════════════ -->
+<div class="screen" id="scr-clinico">
+  <div class="topbar">
+    <div>
+      <div class="topbar-logo">PACS<span>+</span></div>
+      <div class="topbar-sub">Medicina Ala Direita</div>
+    </div>
+    <div class="topbar-right" id="ts"></div>
+  </div>
+
+  <!-- Page dots -->
+  <div class="page-dots">
+    <div class="pdot on" onclick="goPage(0)"></div>
+    <div class="pdot" onclick="goPage(1)"></div>
+    <div class="pdot" onclick="goPage(2)"></div>
+    <div class="pdot" onclick="goPage(3)"></div>
+  </div>
+
+  <!-- Pages -->
+  <div id="pages-wrap">
+    <div id="pages-track">
+
+      <!-- ── PÁGINA 1: DOENTES ── -->
+      <div class="page">
+        <div style="height:12px"></div>
+        <div class="section-title">Indicadores do dia</div>
+        <div class="kpi-grid">
+          <div class="kpi danger"><div class="kpi-val">5</div><div class="kpi-label">Alta clínica · aguardam</div></div>
+          <div class="kpi warn"><div class="kpi-val">38</div><div class="kpi-label">Dias protelamento activo</div></div>
+          <div class="kpi ok"><div class="kpi-val">87%</div><div class="kpi-label">Roteiro 72h · meta ≥80%</div></div>
+          <div class="kpi"><div class="kpi-val">22</div><div class="kpi-label">Doentes internados</div></div>
+        </div>
+        <div class="alert r">MI-001 aguarda ULDM há 10 dias · escalar para PM</div>
+        <div class="section-title">Lista de doentes</div>
+        <div style="margin:0 16px;border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)" id="pat-list"></div>
+        <div style="height:12px"></div>
+      </div>
+
+      <!-- ── PÁGINA 2: ROTEIRO ── -->
+      <div class="page">
+        <div style="height:12px"></div>
+        <div class="card">
+          <div class="card-title">Roteiro da Alta PACS+</div>
+          <div class="form-group"><label class="form-label">Episódio (SClínico)</label><input class="form-input" placeholder="MI-023-2026"></div>
+          <div class="form-group"><label class="form-label">Doente (iniciais + idade)</label><input class="form-input" placeholder="J.F., 84 anos"></div>
+          <div class="form-group"><label class="form-label">NURSPACS+ responsável</label><input class="form-input" value="Ana Santos"></div>
+        </div>
+        <div class="section-title">Avaliação multidisciplinar</div>
+        <div style="margin:0 16px;border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)" id="rot-clin"></div>
+        <div style="height:10px"></div>
+        <div class="section-title">Necessidades pós-alta</div>
+        <div style="margin:0 16px;border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)" id="rot-soc"></div>
+        <div style="height:10px"></div>
+        <div class="card">
+          <div class="card-title">Destino de referenciação</div>
+          <div class="form-group"><label class="form-label">Resposta</label>
+            <select class="form-input">
+              <option>Selecionar...</option>
+              <option>CSP · Centro de Saúde</option>
+              <option>RNCCI · ECCI</option>
+              <option>RNCCI · ULDM</option>
+              <option>RNCCI · UMDR</option>
+              <option>Rede Social · SAD</option>
+              <option>Rede Social · ERPI</option>
+              <option>Família / Cuidador Informal</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Urgência</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px" id="urgencia-btns">
+              <button id="urg-rotina" style="padding:10px 4px;border-radius:10px;border:1.5px solid var(--border);background:var(--white);font-size:12px;cursor:pointer" onclick="selectUrgencia('rotina')">Rotina<br><span style="font-size:10px;color:var(--sub)">72h</span></button>
+              <button id="urg-prioritaria" style="padding:10px 4px;border-radius:10px;border:1.5px solid var(--border);background:var(--white);font-size:12px;cursor:pointer" onclick="selectUrgencia('prioritaria')">Prioritária<br><span style="font-size:10px;color:var(--sub)">48h</span></button>
+              <button id="urg-urgente" style="padding:10px 4px;border-radius:10px;border:1.5px solid var(--border);background:var(--white);font-size:12px;cursor:pointer" onclick="selectUrgencia('urgente')">Urgente<br><span style="font-size:10px;color:var(--sub)">24h</span></button>
+            </div>
+          </div>
+        </div>
+        <div class="btn-row"><button class="btn btn-green" onclick="alert('Roteiro submetido ✓')">Submeter Roteiro da Alta</button></div>
+      </div>
+
+      <!-- ── PÁGINA 3: ISBAR ── -->
+      <div class="page">
+        <div style="height:12px"></div>
+        <div class="section-title">ISBAR · Nota de Transferência</div>
+        <div class="isbar-dots">
+          <div class="idot on" id="idot-0" onclick="isbarGo(0)">I</div>
+          <div class="idot" id="idot-1" onclick="isbarGo(1)">S</div>
+          <div class="idot" id="idot-2" onclick="isbarGo(2)">B</div>
+          <div class="idot" id="idot-3" onclick="isbarGo(3)">A</div>
+          <div class="idot" id="idot-4" onclick="isbarGo(4)">R</div>
+        </div>
+
+        <div class="istep show" id="ist-0">
+          <div class="card">
+            <div style="font-size:22px;color:var(--v);margin-bottom:2px">I · Identify</div>
+            <div style="font-size:12px;color:var(--sub);margin-bottom:14px">Identificação</div>
+            <div class="form-group"><label class="form-label">Episódio</label><input class="form-input" placeholder="MI-023-2026"></div>
+            <div class="form-group"><label class="form-label">Doente</label><input class="form-input" placeholder="Iniciais · Idade"></div>
+            <div class="form-group"><label class="form-label">NURSPACS+ emissor</label><input class="form-input" placeholder="Nome"></div>
+            <div class="form-group"><label class="form-label">Destino da alta</label><input class="form-input" placeholder="CSP / RNCCI / Família"></div>
+          </div>
+          <div class="btn-row"><button class="btn btn-green" onclick="isbarGo(1)">Seguinte →</button></div>
+        </div>
+
+        <div class="istep" id="ist-1">
+          <div class="card">
+            <div style="font-size:22px;color:var(--v);margin-bottom:2px">S · Situation</div>
+            <div style="font-size:12px;color:var(--sub);margin-bottom:14px">Situação actual</div>
+            <div class="form-group"><label class="form-label">Diagnóstico principal</label><input class="form-input" placeholder="Motivo do internamento"></div>
+            <div class="form-group"><label class="form-label">Data de admissão</label><input class="form-input" type="date"></div>
+            <div class="form-group"><label class="form-label">Data de alta clínica</label><input class="form-input" type="date"></div>
+            <div class="form-group"><label class="form-label">Estado actual</label><textarea class="form-input" rows="3" placeholder="Situação clínica no momento da alta"></textarea></div>
+          </div>
+          <div class="btn-row" style="gap:10px">
+            <button class="btn btn-outline" onclick="isbarGo(0)">← Anterior</button>
+            <button class="btn btn-green" onclick="isbarGo(2)">Seguinte →</button>
+          </div>
+        </div>
+
+        <div class="istep" id="ist-2">
+          <div class="card">
+            <div style="font-size:22px;color:var(--v);margin-bottom:2px">B · Background</div>
+            <div style="font-size:12px;color:var(--sub);margin-bottom:14px">Antecedentes</div>
+            <div class="form-group"><label class="form-label">Antecedentes relevantes</label><textarea class="form-input" rows="3" placeholder="HTA, DM, DPOC, ICC..."></textarea></div>
+            <div class="form-group"><label class="form-label">Medicação na alta</label><textarea class="form-input" rows="3" placeholder="Lista de medicação prescrita"></textarea></div>
+            <div class="form-group"><label class="form-label">Alergias</label><input class="form-input" placeholder="Alergias conhecidas"></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-outline" onclick="isbarGo(1)">← Anterior</button>
+            <button class="btn btn-green" onclick="isbarGo(3)">Seguinte →</button>
+          </div>
+        </div>
+
+        <div class="istep" id="ist-3">
+          <div class="card">
+            <div style="font-size:22px;color:var(--v);margin-bottom:2px">A · Assessment</div>
+            <div style="font-size:12px;color:var(--sub);margin-bottom:14px">Avaliação multidisciplinar</div>
+            <div class="form-group"><label class="form-label">Autonomia nas AVD</label>
+              <select class="form-input"><option>Independente</option><option>Parcialmente dependente</option><option>Dependente</option></select>
+            </div>
+            <div class="form-group"><label class="form-label">Suporte familiar</label>
+              <select class="form-input"><option>Adequado</option><option>Parcial</option><option>Ausente</option></select>
+            </div>
+            <div class="form-group"><label class="form-label">Necessidades pós-alta</label><textarea class="form-input" rows="3" placeholder="Necessidades identificadas pela EPA"></textarea></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-outline" onclick="isbarGo(2)">← Anterior</button>
+            <button class="btn btn-green" onclick="isbarGo(4)">Seguinte →</button>
+          </div>
+        </div>
+
+        <div class="istep" id="ist-4">
+          <div class="card">
+            <div style="font-size:22px;color:var(--v);margin-bottom:2px">R · Recommendation</div>
+            <div style="font-size:12px;color:var(--sub);margin-bottom:14px">Recomendações</div>
+            <div class="form-group"><label class="form-label">Destino de alta</label>
+              <select class="form-input"><option>CSP</option><option>RNCCI · ECCI</option><option>RNCCI · UMDR</option><option>RNCCI · ULDM</option><option>Rede Social · SAD</option><option>Rede Social · ERPI</option><option>Família / Cuidador Informal</option></select>
+            </div>
+            <div class="form-group"><label class="form-label">Consultas de seguimento</label><input class="form-input" placeholder="Especialidades · datas previstas"></div>
+            <div class="form-group"><label class="form-label">Recomendações clínicas</label><textarea class="form-input" rows="2" placeholder="Cuidados · sinais de alerta"></textarea></div>
+            <div class="form-group"><label class="form-label">Contacto de urgência</label><input class="form-input" placeholder="Tel. NURSPACS+ / Serviço"></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-outline" onclick="isbarGo(3)">← Anterior</button>
+            <button class="btn btn-blue" onclick="alert('ISBAR guardada no SClínico ✓')">Guardar ISBAR</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── PÁGINA 4: ALERTAS ── -->
+      <div class="page">
+        <div style="height:12px"></div>
+        <div class="section-title">Alertas activos</div>
+        <div style="margin:0 16px;border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)" id="alertas-list"></div>
+        <div style="height:12px"></div>
+        <div class="section-title">Actividade recente</div>
+        <div style="margin:0 16px;border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);background:var(--white)" id="act-list"></div>
+        <div style="height:12px"></div>
+      </div>
+
+    </div><!-- end pages-track -->
+  </div><!-- end pages-wrap -->
+
+  <!-- Bottom nav -->
+  <div class="bottom-nav">
+    <button class="nav-btn on" id="nb-0" onclick="goPage(0)">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <div class="nav-label">Doentes</div>
+    </button>
+    <button class="nav-btn" id="nb-1" onclick="goPage(1)">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <div class="nav-label">Roteiro</div>
+    </button>
+    <button class="nav-btn" id="nb-2" onclick="goPage(2)">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <div class="nav-label">ISBAR</div>
+    </button>
+    <button class="nav-btn" id="nb-3" onclick="goPage(3)">
+      <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <div class="nav-label">Alertas</div>
+    </button>
+    <button class="nav-btn" onclick="backToSplash()">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <div class="nav-label">Perfil</div>
+    </button>
+  </div>
+</div>
+
+<script>
+// ── NAVIGATION ───────────────────────────────────────────────
+function go(scr){
+  document.getElementById('splash').style.display = 'none';
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  var el = document.getElementById('scr-'+scr);
+  if(el) el.classList.add('active');
+  if(scr === 'clinico') initClinical();
+}
+
+function backToSplash(){
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById('splash').style.display = 'flex';
+}
+
+// ── PAGE SWIPE ───────────────────────────────────────────────
+var curPage = 0;
+function goPage(idx){
+  curPage = idx;
+  var track = document.getElementById('pages-track');
+  var wrap = document.getElementById('pages-wrap');
+  if(!track || !wrap) return;
+  track.style.transform = 'translateX(-' + (idx * wrap.offsetWidth) + 'px)';
+  // Update nav buttons
+  for(var i=0;i<4;i++){
+    var nb = document.getElementById('nb-'+i);
+    if(nb) nb.classList.toggle('on', i===idx);
+    var pd = document.querySelectorAll('.pdot')[i];
+    if(pd) pd.classList.toggle('on', i===idx);
+  }
+}
+
+// Swipe
+var tx0 = 0;
+document.addEventListener('touchstart', function(e){ tx0 = e.touches[0].clientX; }, {passive:true});
+document.addEventListener('touchend', function(e){
+  if(!document.getElementById('scr-clinico').classList.contains('active')) return;
+  var dx = tx0 - e.changedTouches[0].clientX;
+  if(dx > 50 && curPage < 3) goPage(curPage+1);
+  if(dx < -50 && curPage > 0) goPage(curPage-1);
+}, {passive:true});
+
+// ── ISBAR ────────────────────────────────────────────────────
+function isbarGo(idx){
+  for(var i=0;i<5;i++){
+    var step = document.getElementById('ist-'+i);
+    var dot = document.getElementById('idot-'+i);
+    if(step) step.classList.remove('show');
+    if(dot) dot.classList.remove('on');
+  }
+  var show = document.getElementById('ist-'+idx);
+  var dot = document.getElementById('idot-'+idx);
+  if(show) show.classList.add('show');
+  if(dot) dot.classList.add('on');
+  // Scroll to top of page 3
+  var pages = document.querySelectorAll('.page');
+  if(pages[2]) pages[2].scrollTop = 0;
+}
+
+// ── DATA ─────────────────────────────────────────────────────
+var patients = [
+  {sem:'r',nome:'J.F.S.',age:84,diag:'ICC descompensada',dias:'10d',dest:'RNCCI · ULDM',badge:'r'},
+  {sem:'o',nome:'M.A.R.',age:76,diag:'DPOC exacerbado',dias:'5d',dest:'CSP · SAD',badge:'o'},
+  {sem:'o',nome:'A.L.P.',age:81,diag:'AVC isquémico',dias:'4d',dest:'RNCCI · UMDR',badge:'o'},
+  {sem:'g',nome:'F.C.M.',age:68,diag:'Pnm. adquirida',dias:'2d',dest:'Família',badge:'g'},
+  {sem:'g',nome:'C.R.T.',age:79,diag:'HTA descomp.',dias:'1d',dest:'CSP',badge:'g'},
+];
+
+var alertas = [
+  {cor:'#C0392B',txt:'MI-001 aguarda ULDM há 10 dias · contactar PM imediatamente'},
+  {cor:'#E6A817',txt:'MI-003 · prazo referenciação RNCCI Portalegre expira em 6h'},
+  {cor:'#E6A817',txt:'MI-007 · Roteiro da Alta não preenchido · admissão há 80h'},
+];
+
+var actividade = [
+  {cor:'#2E7D32',hora:'09:14',txt:'MI-015 · ISBAR enviada para ERPI Elvas · Canal Teams PACS+'},
+  {cor:'#2E7D32',hora:'08:52',txt:'MI-012 · Referenciação SAD Marvão confirmada'},
+  {cor:'#E6A817',hora:'07:45',txt:'MI-003 · RNCCI Portalegre aguarda resposta · prazo 36h'},
+  {cor:'#2E7D32',hora:'ontem',txt:'MI-009 · Roteiro 72h concluído pelo NURSPACS+'},
+];
+
+var rotClin = ['Diagnóstico principal','Comorbilidades activas','Medicação prescrita na alta','Necessidades de reabilitação','Capacidade funcional (AVD)'];
+var rotSoc = ['Situação habitacional','Suporte familiar / cuidador','Recursos sociais activos','Resposta de apoio domiciliário','Necessidades de resposta formal'];
+
+function initClinical(){
+  // Patients
+  var pl = document.getElementById('pat-list');
+  if(pl && !pl.innerHTML){
+    pl.innerHTML = patients.map(function(p){
+      return '<div class="pat-item"><div class="sem '+p.sem+'"></div><div style="flex:1"><div class="pat-name">'+p.nome+' · '+p.age+'a</div><div class="pat-info">'+p.diag+' · '+p.dest+'</div></div><div class="pat-badge '+p.badge+'">'+p.dias+'</div></div>';
+    }).join('');
+  }
+  // Roteiro
+  var rc = document.getElementById('rot-clin');
+  if(rc && !rc.innerHTML){
+    rc.innerHTML = rotClin.map(function(t,i){
+      return '<div class="pat-item"><div style="font-size:12px;flex:1">'+t+'</div><input style="width:120px;border:1px solid #EEE;border-radius:6px;padding:4px 8px;font-size:11px" placeholder="registar"></div>';
+    }).join('');
+  }
+  var rs = document.getElementById('rot-soc');
+  if(rs && !rs.innerHTML){
+    rs.innerHTML = rotSoc.map(function(t){
+      return '<div class="pat-item"><div style="font-size:12px;flex:1">'+t+'</div><input style="width:120px;border:1px solid #EEE;border-radius:6px;padding:4px 8px;font-size:11px" placeholder="registar"></div>';
+    }).join('');
+  }
+  // Alertas
+  var al = document.getElementById('alertas-list');
+  if(al && !al.innerHTML){
+    al.innerHTML = alertas.map(function(a){
+      return '<div class="pat-item"><div style="width:8px;height:8px;border-radius:50%;background:'+a.cor+';flex-shrink:0;margin-top:3px"></div><div style="font-size:12px;line-height:1.4">'+a.txt+'</div></div>';
+    }).join('');
+  }
+  // Activity
+  var act = document.getElementById('act-list');
+  if(act && !act.innerHTML){
+    act.innerHTML = actividade.map(function(a){
+      return '<div class="act-item"><div class="act-dot" style="background:'+a.cor+'"></div><div><div class="act-time">'+a.hora+'</div><div class="act-text">'+a.txt+'</div></div></div>';
+    }).join('');
+  }
+  // Clock
+  updateClock();
+}
+
+function updateClock(){
+  var el = document.getElementById('ts');
+  if(el){ var n=new Date(); el.textContent=n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0'); }
+  setTimeout(updateClock, 30000);
+}
+
+function selectUrgencia(tipo) {
+  ['rotina','prioritaria','urgente'].forEach(function(t){
+    var b = document.getElementById('urg-'+t);
+    if(!b) return;
+    b.style.border = '1.5px solid var(--border)';
+    b.style.background = 'var(--white)';
+    b.style.color = '';
+    b.style.fontWeight = '';
+  });
+  var cores = {
+    'rotina':      {border:'#2E7D32', bg:'#E8F5E9',  color:'#2E7D32'},
+    'prioritaria': {border:'#854F0B', bg:'#FFF3E0',  color:'#854F0B'},
+    'urgente':     {border:'#C0392B', bg:'#FFEBEE',  color:'#C0392B'}
+  };
+  var c = cores[tipo];
+  if(c){
+    var b = document.getElementById('urg-'+tipo);
+    if(b){ b.style.border='1.5px solid '+c.border; b.style.background=c.bg; b.style.color=c.color; b.style.fontWeight='600'; }
+  }
+}
+</script>
+
+<!-- ══════════════════════ DOENTE / FAMÍLIA ══════════════════════ -->
+<div class="screen" id="scr-familia">
+  <div class="topbar" style="background:#D84315">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button onclick="backToSplash()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:0">‹</button>
+      <div>
+        <div class="topbar-logo" style="font-size:16px">PACS+ Família</div>
+        <div class="topbar-sub">Informação sobre a alta do seu familiar</div>
+      </div>
+    </div>
+  </div>
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:20px">
+    <div style="height:12px"></div>
+
+    <!-- Boas vindas -->
+    <div class="card" style="border-left:4px solid #D84315">
+      <div style="font-size:28px;margin-bottom:8px">👋</div>
+      <div style="font-size:15px;color:#1A1A1A;margin-bottom:6px">Bem-vindo ao PACS+</div>
+      <div style="font-size:13px;color:#444;line-height:1.6">Estamos a preparar a alta do seu familiar desde o primeiro dia de internamento. Este espaço foi criado para o manter informado e envolvido em todo o processo.</div>
+    </div>
+
+    <!-- O que é o PACS+ -->
+    <div class="section-title">O que é o PACS+</div>
+    <div class="card">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="width:28px;height:28px;border-radius:50%;background:#D84315;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+          <div style="font-size:13px;color:#444;line-height:1.5">Nas primeiras 72 horas de internamento, a nossa equipa avalia as necessidades do seu familiar para quando tiver alta.</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="width:28px;height:28px;border-radius:50%;background:#D84315;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+          <div style="font-size:13px;color:#444;line-height:1.5">Construímos um plano da alta personalizado com destino, recursos de suporte e continuidade de cuidados garantidos.</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="width:28px;height:28px;border-radius:50%;background:#D84315;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+          <div style="font-size:13px;color:#444;line-height:1.5">Contactamos antecipadamente o CSP, RNCCI ou resposta social adequada para que tudo esteja pronto quando chegar a hora.</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="width:28px;height:28px;border-radius:50%;background:#D84315;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div>
+          <div style="font-size:13px;color:#444;line-height:1.5">Após a alta, o Enfermeiro CSP acompanha o seu familiar nos primeiros 7 dias.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recursos na comunidade -->
+    <div class="section-title">Recursos na comunidade</div>
+    <div style="margin:0 16px;border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);background:var(--white)">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;border-radius:10px;background:#E8F5E9;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏡</div>
+        <div style="flex:1"><div style="font-size:13px">SAD · Serviço de Apoio Domiciliário</div><div style="font-size:11px;color:var(--sub);margin-top:1px">Apoio em casa · higiene, medicação, alimentação</div></div>
+        <div style="color:#CCC">›</div>
+      </div>
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;border-radius:10px;background:#EDE7F6;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏥</div>
+        <div style="flex:1"><div style="font-size:13px">RNCCI · Cuidados Continuados</div><div style="font-size:11px;color:var(--sub);margin-top:1px">Equipa de saúde que vai a casa (ECCI)</div></div>
+        <div style="color:#CCC">›</div>
+      </div>
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;border-radius:10px;background:#FFF8E1;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏨</div>
+        <div style="flex:1"><div style="font-size:13px">ERPI · Estrutura Residencial</div><div style="font-size:11px;color:var(--sub);margin-top:1px">Lar residencial para idosos</div></div>
+        <div style="color:#CCC">›</div>
+      </div>
+      <div style="padding:14px 16px;display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;border-radius:10px;background:#FCE4EC;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🩺</div>
+        <div style="flex:1"><div style="font-size:13px">CSP · Centro de Saúde</div><div style="font-size:11px;color:var(--sub);margin-top:1px">Seguimento pelo Enfermeiro CSP</div></div>
+        <div style="color:#CCC">›</div>
+      </div>
+    </div>
+
+    <!-- Contactar a equipa -->
+    <div style="height:12px"></div>
+    <div class="section-title">Contactar a equipa</div>
+    <div class="card">
+      <div style="font-size:13px;color:#444;margin-bottom:12px">Tem dúvidas sobre a alta ou o plano de cuidados? O NURSPACS+ está disponível para o apoiar.</div>
+      <div style="background:var(--vl);border-radius:10px;padding:14px;text-align:center;margin-bottom:12px">
+        <div style="font-size:11px;color:var(--sub);margin-bottom:4px">NURSPACS+ responsável</div>
+        <div style="font-size:16px;color:var(--v)">Ana Santos</div>
+        <div style="font-size:12px;color:var(--sub);margin-top:2px">Medicina Ala Direita · HDJMG</div>
+      </div>
+      <button class="btn" style="background:#D84315;color:#fff;border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px" onclick="alert('Contacto: extensão HDJMG')">
+        📞 Contactar NURSPACS+
+      </button>
+    </div>
+
+    <!-- Feedback -->
+    <div class="section-title">Feedback</div>
+    <div class="card">
+      <div style="font-size:13px;color:#444;margin-bottom:14px">A sua opinião sobre o processo da alta é muito importante para nós.</div>
+      <div class="form-group">
+        <label class="form-label">Como foi a sua experiência com o PACS+?</label>
+        <select class="form-input">
+          <option>Muito satisfeito/a</option>
+          <option>Satisfeito/a</option>
+          <option>Pouco satisfeito/a</option>
+          <option>Insatisfeito/a</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Comentários ou sugestões</label>
+        <textarea class="form-input" rows="4" placeholder="Partilhe a sua experiência..."></textarea>
+      </div>
+      <button class="btn" style="background:#D84315;color:#fff;border-radius:14px;padding:14px;font-size:14px" onclick="alert('Feedback enviado. Obrigado!')">Enviar feedback</button>
+    </div>
+    <div style="height:12px"></div>
+    <div style="margin:0 16px 20px"><button class="btn" style="background:var(--white);color:var(--az);border:1.5px solid var(--border);border-radius:14px;padding:14px;font-size:13px" onclick="backToSplash()">← Voltar ao início</button></div>
+  </div>
+</div>
+
+<!-- ══════════════════════ GESTÃO ══════════════════════ -->
+<div class="screen" </div>
+</div>
+
+<script>
+// ── NAVIGATION ───────────────────────────────────────────────
+function go(scr){
+  document.getElementById('splash').style.display = 'none';
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  var el = document.getElementById('scr-'+scr);
+  if(el) el.classList.add('active');
+  if(scr === 'clinico') initClinical();
+}
+
+function backToSplash(){
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById('splash').style.display = 'flex';
+}
+
+// ── PAGE SWIPE ───────────────────────────────────────────────
+var curPage = 0;
+function goPage(idx){
+  curPage = idx;
+  var track = document.getElementById('pages-track');
+  var wrap = document.getElementById('pages-wrap');
+  if(!track || !wrap) return;
+  track.style.transform = 'translateX(-' + (idx * wrap.offsetWidth) + 'px)';
+  // Update nav buttons
+  for(var i=0;i<4;i++){
+    var nb = document.getElementById('nb-'+i);
+    if(nb) nb.classList.toggle('on', i===idx);
+    var pd = document.querySelectorAll('.pdot')[i];
+    if(pd) pd.classList.toggle('on', i===idx);
+  }
+}
+
+// Swipe
+var tx0 = 0;
+document.addEventListener('touchstart', function(e){ tx0 = e.touches[0].clientX; }, {passive:true});
+document.addEventListener('touchend', function(e){
+  if(!document.getElementById('scr-clinico').classList.contains('active')) return;
+  var dx = tx0 - e.changedTouches[0].clientX;
+  if(dx > 50 && curPage < 3) goPage(curPage+1);
+  if(dx < -50 && curPage > 0) goPage(curPage-1);
+}, {passive:true});
+
+// ── ISBAR ────────────────────────────────────────────────────
+function isbarGo(idx){
+  for(var i=0;i<5;i++){
+    var step = document.getElementById('ist-'+i);
+    var dot = document.getElementById('idot-'+i);
+    if(step) step.classList.remove('show');
+    if(dot) dot.classList.remove('on');
+  }
+  var show = document.getElementById('ist-'+idx);
+  var dot = document.getElementById('idot-'+idx);
+  if(show) show.classList.add('show');
+  if(dot) dot.classList.add('on');
+  // Scroll to top of page 3
+  var pages = document.querySelectorAll('.page');
+  if(pages[2]) pages[2].scrollTop = 0;
+}
+
+// ── DATA ─────────────────────────────────────────────────────
+var patients = [
+  {sem:'r',nome:'J.F.S.',age:84,diag:'ICC descompensada',dias:'10d',dest:'RNCCI · ULDM',badge:'r'},
+  {sem:'o',nome:'M.A.R.',age:76,diag:'DPOC exacerbado',dias:'5d',dest:'CSP · SAD',badge:'o'},
+  {sem:'o',nome:'A.L.P.',age:81,diag:'AVC isquémico',dias:'4d',dest:'RNCCI · UMDR',badge:'o'},
+  {sem:'g',nome:'F.C.M.',age:68,diag:'Pnm. adquirida',dias:'2d',dest:'Família',badge:'g'},
+  {sem:'g',nome:'C.R.T.',age:79,diag:'HTA descomp.',dias:'1d',dest:'CSP',badge:'g'},
+];
+
+var alertas = [
+  {cor:'#C0392B',txt:'MI-001 aguarda ULDM há 10 dias · contactar PM imediatamente'},
+  {cor:'#E6A817',txt:'MI-003 · prazo referenciação RNCCI Portalegre expira em 6h'},
+  {cor:'#E6A817',txt:'MI-007 · Roteiro da Alta não preenchido · admissão há 80h'},
+];
+
+var actividade = [
+  {cor:'#2E7D32',hora:'09:14',txt:'MI-015 · ISBAR enviada para ERPI Elvas · Canal Teams PACS+'},
+  {cor:'#2E7D32',hora:'08:52',txt:'MI-012 · Referenciação SAD Marvão confirmada'},
+  {cor:'#E6A817',hora:'07:45',txt:'MI-003 · RNCCI Portalegre aguarda resposta · prazo 36h'},
+  {cor:'#2E7D32',hora:'ontem',txt:'MI-009 · Roteiro 72h concluído pelo NURSPACS+'},
+];
+
+var rotClin = ['Diagnóstico principal','Comorbilidades activas','Medicação prescrita na alta','Necessidades de reabilitação','Capacidade funcional (AVD)'];
+var rotSoc = ['Situação habitacional','Suporte familiar / cuidador','Recursos sociais activos','Resposta de apoio domiciliário','Necessidades de resposta formal'];
+
+function initClinical(){
+  // Patients
+  var pl = document.getElementById('pat-list');
+  if(pl && !pl.innerHTML){
+    pl.innerHTML = patients.map(function(p){
+      return '<div class="pat-item"><div class="sem '+p.sem+'"></div><div style="flex:1"><div class="pat-name">'+p.nome+' · '+p.age+'a</div><div class="pat-info">'+p.diag+' · '+p.dest+'</div></div><div class="pat-badge '+p.badge+'">'+p.dias+'</div></div>';
+    }).join('');
+  }
+  // Roteiro
+  var rc = document.getElementById('rot-clin');
+  if(rc && !rc.innerHTML){
+    rc.innerHTML = rotClin.map(function(t,i){
+      return '<div class="pat-item"><div style="font-size:12px;flex:1">'+t+'</div><input style="width:120px;border:1px solid #EEE;border-radius:6px;padding:4px 8px;font-size:11px" placeholder="registar"></div>';
+    }).join('');
+  }
+  var rs = document.getElementById('rot-soc');
+  if(rs && !rs.innerHTML){
+    rs.innerHTML = rotSoc.map(function(t){
+      return '<div class="pat-item"><div style="font-size:12px;flex:1">'+t+'</div><input style="width:120px;border:1px solid #EEE;border-radius:6px;padding:4px 8px;font-size:11px" placeholder="registar"></div>';
+    }).join('');
+  }
+  // Alertas
+  var al = document.getElementById('alertas-list');
+  if(al && !al.innerHTML){
+    al.innerHTML = alertas.map(function(a){
+      return '<div class="pat-item"><div style="width:8px;height:8px;border-radius:50%;background:'+a.cor+';flex-shrink:0;margin-top:3px"></div><div style="font-size:12px;line-height:1.4">'+a.txt+'</div></div>';
+    }).join('');
+  }
+  // Activity
+  var act = document.getElementById('act-list');
+  if(act && !act.innerHTML){
+    act.innerHTML = actividade.map(function(a){
+      return '<div class="act-item"><div class="act-dot" style="background:'+a.cor+'"></div><div><div class="act-time">'+a.hora+'</div><div class="act-text">'+a.txt+'</div></div></div>';
+    }).join('');
+  }
+  // Clock
+  updateClock();
+}
+
+function updateClock(){
+  var el = document.getElementById('ts');
+  if(el){ var n=new Date(); el.textContent=n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0'); }
+  setTimeout(updateClock, 30000);
+}
+</script>
+
+<!-- ══════════════════════ DOENTE / FAMÍLIA ══════════════════════ -->
+<div class="screen" id="scr-familia">
+  <div class="topbar" style="background:#D84315">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button onclick="backToSplash()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:0">‹</button>
+      <div>
+        <div class="topbar-logo" style="font-size:16px">PACS+ Família</div>
+        <div class="topbar-sub">Informação sobre a alta do seu familiar</div>
+      </div>
+    </div>
+  </div>
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:20px">
+    <div style="height:12px"></div>
+
+    <!-- Boas vindas -->
+    <div class="card" style="border-left:4px solid #D84315">
+      <div style="font-size:28px;margin-bottom:8px">👋</div>
+      <div style="font-size:15px;color:#1A1A1A;margin-bottom:6px">Bem-vindo ao PACS+</div>
+      <div style="font-size:13px;color:#444;line-height:1.6">Estamos a preparar a alta do seu familiar desde o primeiro dia de internamento. Este espaço foi criado para o manter informado e envolvido em todo o processo.</div>
+    </div>
+
+    <!-- O que é o PACS+ -->
+    <div class="section-title">O que é o PACS+</div>
+    <div class="card">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="width:28px;height:28px;border-radius:50%;background:#D84315;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+          <div style="font-size:13px;color:#444;line-height:1.5">Nas primeiras 72 horas de internamento, a nossa equipa avalia as necessidades do seu familiar para quando tiver alta.</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="width:28px;height:28px;border-radius:50%;background:#D84315;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+          <div style="font-size:13px;color:#444;line-height:1.5">Construímos um plano da alta personalizado com destino, recursos de suporte e continuidade de cuidados garantidos.</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="width:28px;height:28px;border-radius:50%;background:#D84315;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+          <div style="font-size:13px;color:#444;line-height:1.5">Contactamos antecipadamente o CSP, RNCCI ou resposta social adequada para que tudo esteja pronto quando chegar a hora.</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="width:28px;height:28px;border-radius:50%;background:#D84315;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div>
+          <div style="font-size:13px;color:#444;line-height:1.5">Após a alta, o Enfermeiro CSP acompanha o seu familiar nos primeiros 7 dias.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recursos na comunidade -->
+    <div class="section-title">Recursos na comunidade</div>
+    <div style="margin:0 16px;border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06);background:var(--white)">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;border-radius:10px;background:#E8F5E9;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏡</div>
+        <div style="flex:1"><div style="font-size:13px">SAD · Serviço de Apoio Domiciliário</div><div style="font-size:11px;color:var(--sub);margin-top:1px">Apoio em casa · higiene, medicação, alimentação</div></div>
+        <div style="color:#CCC">›</div>
+      </div>
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;border-radius:10px;background:#EDE7F6;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏥</div>
+        <div style="flex:1"><div style="font-size:13px">RNCCI · Cuidados Continuados</div><div style="font-size:11px;color:var(--sub);margin-top:1px">Equipa de saúde que vai a casa (ECCI)</div></div>
+        <div style="color:#CCC">›</div>
+      </div>
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;border-radius:10px;background:#FFF8E1;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🏨</div>
+        <div style="flex:1"><div style="font-size:13px">ERPI · Estrutura Residencial</div><div style="font-size:11px;color:var(--sub);margin-top:1px">Lar residencial para idosos</div></div>
+        <div style="color:#CCC">›</div>
+      </div>
+      <div style="padding:14px 16px;display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;border-radius:10px;background:#FCE4EC;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">🩺</div>
+        <div style="flex:1"><div style="font-size:13px">CSP · Centro de Saúde</div><div style="font-size:11px;color:var(--sub);margin-top:1px">Seguimento pelo Enfermeiro CSP</div></div>
+        <div style="color:#CCC">›</div>
+      </div>
+    </div>
+
+    <!-- Contactar a equipa -->
+    <div style="height:12px"></div>
+    <div class="section-title">Contactar a equipa</div>
+    <div class="card">
+      <div style="font-size:13px;color:#444;margin-bottom:12px">Tem dúvidas sobre a alta ou o plano de cuidados? O NURSPACS+ está disponível para o apoiar.</div>
+      <div style="background:var(--vl);border-radius:10px;padding:14px;text-align:center;margin-bottom:12px">
+        <div style="font-size:11px;color:var(--sub);margin-bottom:4px">NURSPACS+ responsável</div>
+        <div style="font-size:16px;color:var(--v)">Ana Santos</div>
+        <div style="font-size:12px;color:var(--sub);margin-top:2px">Medicina Ala Direita · HDJMG</div>
+      </div>
+      <button class="btn" style="background:#D84315;color:#fff;border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px" onclick="alert('Contacto: extensão HDJMG')">
+        📞 Contactar NURSPACS+
+      </button>
+    </div>
+
+    <!-- Feedback -->
+    <div class="section-title">Feedback</div>
+    <div class="card">
+      <div style="font-size:13px;color:#444;margin-bottom:14px">A sua opinião sobre o processo da alta é muito importante para nós.</div>
+      <div class="form-group">
+        <label class="form-label">Como foi a sua experiência com o PACS+?</label>
+        <select class="form-input">
+          <option>Muito satisfeito/a</option>
+          <option>Satisfeito/a</option>
+          <option>Pouco satisfeito/a</option>
+          <option>Insatisfeito/a</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Comentários ou sugestões</label>
+        <textarea class="form-input" rows="4" placeholder="Partilhe a sua experiência..."></textarea>
+      </div>
+      <button class="btn" style="background:#D84315;color:#fff;border-radius:14px;padding:14px;font-size:14px" onclick="alert('Feedback enviado. Obrigado!')">Enviar feedback</button>
+    </div>
+    <div style="height:12px"></div>
+    <div style="margin:0 16px 20px"><button class="btn" style="background:var(--white);color:var(--az);border:1.5px solid var(--border);border-radius:14px;padding:14px;font-size:13px" onclick="backToSplash()">← Voltar ao início</button></div>
+  </div>
+</div>
+
+<!-- ══════════════════════ GESTÃO ══════════════════════ -->
+<div class="screen" id="scr-gestao">
+  <div class="topbar">
+    <div>
+      <div class="topbar-logo">PACS<span>+</span></div>
+      <div class="topbar-sub">Dashboard · Gestão e Liderança</div>
+    </div>
+    <button onclick="backToSplash()" style="background:none;border:none;color:rgba(255,255,255,.7);font-size:13px;cursor:pointer">← Perfil</button>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding-bottom:20px">
+    <div style="height:12px"></div>
+    <div class="section-title">Indicadores · Ano 0 · 12 meses piloto</div>
+    <div class="kpi-grid">
+      <div class="kpi ok"><div class="kpi-val">+26,2%</div><div class="kpi-label">ROI · 12 meses</div></div>
+      <div class="kpi ok"><div class="kpi-val">265</div><div class="kpi-label">Dias protelamento evitados</div></div>
+      <div class="kpi ok"><div class="kpi-val">85.986€</div><div class="kpi-label">Poupança directa</div></div>
+      <div class="kpi"><div class="kpi-val">73.030€</div><div class="kpi-label">Investimento total</div></div>
+    </div>
+    <div class="section-title">Indicadores de processo</div>
+    <div class="kpi-grid">
+      <div class="kpi ok"><div class="kpi-val">87%</div><div class="kpi-label">Roteiro 72h · meta ≥80%</div></div>
+      <div class="kpi ok"><div class="kpi-val">92%</div><div class="kpi-label">ISBAR SClínico · meta ≥90%</div></div>
+      <div class="kpi warn"><div class="kpi-val">71%</div><div class="kpi-label">Referenciação ≥72h · meta ≥75%</div></div>
+      <div class="kpi ok"><div class="kpi-val">78%</div><div class="kpi-label">Satisfação doentes · meta ≥75%</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Ganhos em Saúde · QALY</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:var(--al);border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:20px;color:#854F0B">2,66</div>
+          <div style="font-size:10px;color:#854F0B;margin-top:2px">QALY perdidos 2025</div>
+          <div style="font-size:13px;color:#854F0B;margin-top:4px">53.100 €</div>
+        </div>
+        <div style="background:var(--vl);border-radius:10px;padding:12px;text-align:center">
+          <div style="font-size:20px;color:var(--v)">0,795</div>
+          <div style="font-size:10px;color:var(--v);margin-top:2px">QALY ganhos Ano 0</div>
+          <div style="font-size:13px;color:var(--v);margin-top:4px">15.900 €</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--sub);margin-top:8px;text-align:center">Portaria 391/2019 · Drummond et al. (2015) · Barradas Pires (2023)</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Projecção 36 meses</div>
+      <div style="font-size:13px;color:#444;line-height:2">
+        📈 ROI acumulado: +133,4%<br>
+        💰 Resultado líquido: +1.522.531 €<br>
+        🏥 Expansão: Ala Direita → 4 alas → ULSAALE
+      </div>
+    </div>
+    <div style="margin:0 16px 20px"><button class="btn" style="background:var(--white);color:var(--az);border:1.5px solid #E8E8E8;border-radius:14px;padding:14px;font-size:13px" onclick="backToSplash()">← Voltar ao início</button></div>
+  </div>
+</div>
+</body>
+</html>
