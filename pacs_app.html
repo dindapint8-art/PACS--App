@@ -203,10 +203,10 @@ textarea.form-input{resize:none}
             </select>
           </div>
           <div class="form-group"><label class="form-label">Urgência</label>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-              <button style="padding:10px 4px;border-radius:10px;border:1.5px solid var(--border);background:var(--white);font-size:12px;cursor:pointer">Rotina<br><span style="font-size:10px;color:var(--sub)">72h</span></button>
-              <button style="padding:10px 4px;border-radius:10px;border:1.5px solid var(--a);background:var(--al);font-size:12px;cursor:pointer;color:#854F0B">Prioritária<br><span style="font-size:10px">48h</span></button>
-              <button style="padding:10px 4px;border-radius:10px;border:1.5px solid var(--border);background:var(--white);font-size:12px;cursor:pointer">Urgente<br><span style="font-size:10px;color:var(--sub)">24h</span></button>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px" id="urgencia-btns">
+              <button id="urg-rotina" style="padding:10px 4px;border-radius:10px;border:1.5px solid var(--border);background:var(--white);font-size:12px;cursor:pointer" onclick="selectUrgencia('rotina')">Rotina<br><span style="font-size:10px;color:var(--sub)">72h</span></button>
+              <button id="urg-prioritaria" style="padding:10px 4px;border-radius:10px;border:1.5px solid var(--border);background:var(--white);font-size:12px;cursor:pointer" onclick="selectUrgencia('prioritaria')">Prioritária<br><span style="font-size:10px;color:var(--sub)">48h</span></button>
+              <button id="urg-urgente" style="padding:10px 4px;border-radius:10px;border:1.5px solid var(--border);background:var(--white);font-size:12px;cursor:pointer" onclick="selectUrgencia('urgente')">Urgente<br><span style="font-size:10px;color:var(--sub)">24h</span></button>
             </div>
           </div>
         </div>
@@ -469,6 +469,27 @@ function updateClock(){
   var el = document.getElementById('ts');
   if(el){ var n=new Date(); el.textContent=n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0'); }
   setTimeout(updateClock, 30000);
+}
+
+function selectUrgencia(tipo) {
+  ['rotina','prioritaria','urgente'].forEach(function(t){
+    var b = document.getElementById('urg-'+t);
+    if(!b) return;
+    b.style.border = '1.5px solid var(--border)';
+    b.style.background = 'var(--white)';
+    b.style.color = '';
+    b.style.fontWeight = '';
+  });
+  var cores = {
+    'rotina':      {border:'#2E7D32', bg:'#E8F5E9',  color:'#2E7D32'},
+    'prioritaria': {border:'#854F0B', bg:'#FFF3E0',  color:'#854F0B'},
+    'urgente':     {border:'#C0392B', bg:'#FFEBEE',  color:'#C0392B'}
+  };
+  var c = cores[tipo];
+  if(c){
+    var b = document.getElementById('urg-'+tipo);
+    if(b){ b.style.border='1.5px solid '+c.border; b.style.background=c.bg; b.style.color=c.color; b.style.fontWeight='600'; }
+  }
 }
 </script>
 
