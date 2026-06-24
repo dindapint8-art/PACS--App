@@ -512,7 +512,7 @@ footer{text-align:center;padding:16px;font-size:11px;color:#AAA;border-top:1px s
     <div class="hero-sub">Sponsor: CEO (CA ULSAALE) · PM: Deolinda Pinto · v1.0 · 2026</div>
   </div>
   <div class="charter-nav">
-    <button class="c-btn on" onclick="showCharter('ficha',this)">Ficha</button>
+    <button class="c-btn" onclick="showCharter('ficha',this)">Ficha</button>
     <button class="c-btn" onclick="showCharter('objetivos',this)">Objetivos</button>
     <button class="c-btn" onclick="showCharter('recursos',this)">Recursos e ROI</button>
     <button class="c-btn" onclick="showCharter('marcos',this)">Marcos</button>
@@ -520,7 +520,7 @@ footer{text-align:center;padding:16px;font-size:11px;color:#AAA;border-top:1px s
     <button class="c-btn" onclick="showCharter('aprovacao',this)">Aprovação</button>
   </div>
 
-  <div class="c-panel on" id="cp-ficha">
+  <div class="c-panel" id="cp-ficha">
     <div class="card">
       <div class="card-title" style="color:var(--az)"><span style="background:var(--az)" class="card-title::before"></span>Identificação do projeto</div>
       <table>
@@ -659,12 +659,12 @@ footer{text-align:center;padding:16px;font-size:11px;color:#AAA;border-top:1px s
     <div class="hero-sub">Instrumentos operacionais da EPA · coordenados pelo NURSPACS+</div>
   </div>
   <div class="dash-tabs" style="margin-bottom:16px">
-    <button class="dash-tab on" onclick="showRot('roteiro',this)">Roteiro da Alta 72h</button>
+    <button class="dash-tab" onclick="showRot('roteiro',this)">Roteiro da Alta 72h</button>
     <button class="dash-tab" onclick="showRot('referenciacao',this)">Referenciação Digital</button>
   </div>
 
   <!-- ROTEIRO -->
-  <div class="dash-view on" id="rv-roteiro">
+  <div class="dash-view" id="rv-roteiro">
     <div class="prog-wrap">
       <span class="prog-label">Progresso</span>
       <div class="prog-track"><div class="prog-fill" id="rot-fill" style="width:0%;background:var(--v)"></div></div>
@@ -695,12 +695,12 @@ footer{text-align:center;padding:16px;font-size:11px;color:#AAA;border-top:1px s
     <div class="hero-sub">Medicina Ala Direita HDJMG · Dados reais SClínico 2025 </div>
   </div>
   <div class="dash-tabs">
-    <button class="dash-tab on" onclick="showDash('ops',this)">Operacional</button>
+    <button class="dash-tab" onclick="showDash('ops',this)">Operacional</button>
     <button class="dash-tab" onclick="showDash('gestao',this)">Gestão · ROI</button>
   </div>
 
   <!-- OPERACIONAL -->
-  <div class="dash-view on" id="dv-ops">
+  <div class="dash-view" id="dv-ops">
     <div class="kpi-row">
       <div class="kpi-card danger"><div class="kl">Dias protelamento</div><div class="kv">74</div><div class="ks">Σ dias alta clínica até alta administrativa · baseline mensal 2025</div></div>
       <div class="kpi-card danger"><div class="kl">Episódios protelados</div><div class="kv">7</div><div class="ks">alta clínica dada · aguardam saída · baseline mensal 2025</div></div>
@@ -795,7 +795,7 @@ footer{text-align:center;padding:16px;font-size:11px;color:#AAA;border-top:1px s
     <div class="hero-sub">Guia de uso diário para a Equipa de Planeamento da Alta · Versão 1.0 · 2026</div>
   </div>
   <div class="charter-nav">
-    <button class="c-btn on" onclick="showManual('proposito',this)">1. Propósito</button>
+    <button class="c-btn" onclick="showManual('proposito',this)">1. Propósito</button>
     <button class="c-btn" onclick="showManual('equipa',this)">2. Equipa</button>
     <button class="c-btn" onclick="showManual('percurso',this)">3. Percurso</button>
     <button class="c-btn" onclick="showManual('roteiro',this)">4. Roteiro</button>
@@ -809,7 +809,7 @@ footer{text-align:center;padding:16px;font-size:11px;color:#AAA;border-top:1px s
     <button class="c-btn" onclick="showManual('contactos',this)">12. Contactos</button>
   </div>
 
-  <div class="c-panel on" id="mp-proposito">
+  <div class="c-panel" id="mp-proposito">
     <div class="card">
       <div class="card-title" style="color:var(--az)">1. Propósito e Âmbito do Manual</div>
       <p style="font-size:13px;line-height:1.7;margin-bottom:10px">Este Manual Operacional define os procedimentos, instrumentos e responsabilidades do projeto PACS+ Planeamento da Alta Clínica Segura · no Serviço de Medicina Interna Ala Direita do Hospital Dr. José Maria Grande (HDJMG), ULS Alto Alentejo (ULSAALE). É um documento de uso diário, desenhado para ser consultado em qualquer momento do turno.</p>
@@ -1500,10 +1500,11 @@ function toggleTL(idx){
 
 // ── CHARTER ────────────────────────────────────────────────
 function showCharter(id,btn){
+  var panel=document.getElementById('cp-'+id);
+  var isOpen=panel.classList.contains('on');
   document.querySelectorAll('.c-panel').forEach(function(p){p.classList.remove('on')});
   document.querySelectorAll('.c-btn').forEach(function(b){b.classList.remove('on')});
-  document.getElementById('cp-'+id).classList.add('on');
-  btn.classList.add('on');
+  if(!isOpen){panel.classList.add('on');btn.classList.add('on');}
 }
 
 // ── FLUXOGRAMA ─────────────────────────────────────────────
@@ -1686,10 +1687,11 @@ function gerarSummary(){
   el.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function showRot(id,btn){
+  var panel=document.getElementById('rv-'+id);
+  var isOpen=panel.classList.contains('on');
   document.querySelectorAll('.dash-view').forEach(function(v){v.classList.remove('on')});
   document.querySelectorAll('.dash-tab').forEach(function(b){b.classList.remove('on')});
-  document.getElementById('rv-'+id).classList.add('on');
-  btn.classList.add('on');
+  if(!isOpen){panel.classList.add('on');btn.classList.add('on');}
 }
 
 // ── REFERENCIAÇÃO ──────────────────────────────────────────
@@ -1850,18 +1852,20 @@ function renderActivity(){
   }).join('');
 }
 function showDash(id,btn){
+  var panel=document.getElementById('dv-'+id);
+  var isOpen=panel.classList.contains('on');
   document.querySelectorAll('.dash-view').forEach(function(v){v.classList.remove('on')});
   document.querySelectorAll('.dash-tab').forEach(function(b){b.classList.remove('on')});
-  document.getElementById('dv-'+id).classList.add('on');
-  btn.classList.add('on');
+  if(!isOpen){panel.classList.add('on');btn.classList.add('on');}
 }
 
 // ── MANUAL ─────────────────────────────────────────────────
 function showManual(id,btn){
+  var panel=document.getElementById('mp-'+id);
+  var isOpen=panel.classList.contains('on');
   document.querySelectorAll('#view-manual .c-panel').forEach(function(p){p.classList.remove('on')});
   document.querySelectorAll('#view-manual .c-btn').forEach(function(b){b.classList.remove('on')});
-  document.getElementById('mp-'+id).classList.add('on');
-  btn.classList.add('on');
+  if(!isOpen){panel.classList.add('on');btn.classList.add('on');}
 }
 
 // ── INIT ───────────────────────────────────────────────────
